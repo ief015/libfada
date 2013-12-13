@@ -1,0 +1,20 @@
+/**
+\mainpage
+
+\section Getting_Started Getting Started
+
+Using libfada is simple, just add an include directory set to libfada's "include" directory, and add an include directive in your project like so:
+\code
+#include <fada/fada.h>
+\endcode
+Or, if your project is using C++:
+\code
+#include <fada/fada.hpp>
+\endcode
+
+If after linking libfada to your project, you'll need to add the preprocessor define \c FADA_STATIC if you've linked against a statically-linked libfada library file.
+
+If you are building libfada yourself from scratch, you'll need to add the preprocessor define \c FADA_BUILD. If you're building it as a statically-linked library, you will also have to add \c FADA_STATIC as well.
+
+Check out the Related Pages section for some examples showing how to use libfada.
+*/

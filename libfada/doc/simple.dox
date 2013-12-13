@@ -1,0 +1,15 @@
+/**
+\page Simple_Visualizer III: Basic Visualizer
+\brief A simple, but fully-featured visualizer.
+
+In these examples, I'll be using SFML (<a href="http://www.sfml-dev.org/">www.sfml-dev.org</a>) for audio loading and playing, graphics, and window handling, which should help keep these examples simple.
+
+\image html "simple.png"
+
+This application is a fully featured visualizer that visualizes beat, bass, FFT, and the audio waveform in real-time as the audio plays.
+
+This code depends on SFML's (<a href="http://www.sfml-dev.org/">www.sfml-dev.org</a>) system, graphics, audio, and windowing modules.
+
+The whole code is in a single .cpp file, so this isn't for the faint of heart.
+View the code here: <a href="simple.cpp" target="_blank"><b>simple.cpp</b></a>
+*/

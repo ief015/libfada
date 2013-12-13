@@ -1,0 +1,312 @@
+/**
+\page Beat_Bass I: Beat + Bass
+\brief Visualize beat and bass intensity.
+
+In these examples, I'll be using SFML (<a href="http://www.sfml-dev.org/">www.sfml-dev.org</a>) for audio loading and playing, which should help keep these examples simple.
+
+\section Beat_Bass_1 Part 1 - A super simple example.
+
+The beat/bass visualizer will calculate the intensity of beat and bass in real-time, and display it in the console.
+
+\code
+/***********************************************************
+ ** libfada Beat and Bass Visualizer
+ **   Written by Nathan Cousins - December 2013
+ ** 
+ ** Usage: beatbass <audio_filepath>
+ **   `audio_filepath' may be any filetype supported by SFML/libsndfile.
+ ***********************************************************/
+
+#include <SFML/Audio.hpp>
+#include <fada/fada.hpp>
+
+#include <iostream>
+
+
+//////////////////////////////////////////////////
+int main(int argc, char* args[])
+{
+
+	// Create the libfada manager.
+	// The libfada manager is responsible for analysing the sample data given to it.
+	fada_Manager* fada = fada_newmanager();
+
+
+	std::string filename = "";
+	if (argc > 1)
+		filename = args[1];
+
+
+	sf::Sound audio;
+	sf::SoundBuffer audioBuffer;
+
+	// Decode all the sample data.
+	if (!audioBuffer.loadFromFile(filename))
+	{
+		std::cerr << "Problem opening audio file." << std::endl;
+		return 1;
+	}
+
+	audio.setBuffer(audioBuffer);
+
+	// Give the manager the audio data, and what kind of audio data it is.
+	fada_bindsamples(fada, (void*)audioBuffer.getSamples(), audioBuffer.getSampleCount(),
+		FADA_FALSE, // We don't need to copy the data because the audioBuffer will hold on to it. So let's reference it instead.
+		FADA_TSAMPLE_INT16, // SFML uses Int16 for audio.
+		audioBuffer.getSampleRate(), audioBuffer.getChannelCount());
+
+	// Commented, because the default window size is already 1024.
+	// If we wanted to change the size of the analysis window, we could do it here.
+//	fada_setwindowframes(fada, 1024);
+
+
+	// Update every 1024 samples.
+	sf::Time continueInterval = sf::seconds(1024.f / audioBuffer.getSampleRate());
+	sf::Time nextContinue = continueInterval;
+
+	bool readyToUpdate = true;
+
+
+	// Play the audio.
+	audio.play();
+
+	while (audio.getStatus() == sf::Sound::Playing)
+	{
+		if (readyToUpdate)
+		{
+			fada_Res beat, bass, normal;
+
+			// libfada's analyzation algorithms use raw sample data in their calculations. This means that the results
+			//   can vary among different sample data types. The normalizer is used to normalize results so they are
+			//   uniform across different sample data types.
+			normal = fada_getnormalizer(fada);
+
+			// Calculate 'beat' and 'bass'
+			fada_calcbeat(fada, &beat);
+			fada_calcbass(fada, &bass);
+
+			// Normalize the values.
+			beat /= normal;
+			bass /= normal;
+
+			// Visualize beat/bass.
+			unsigned int beatCharCount = static_cast<unsigned int>(beat * 500);
+			unsigned int bassCharCount = static_cast<unsigned int>(bass * 75);
+			beatCharCount = (beatCharCount > 50) ? 50 : beatCharCount;
+			bassCharCount = (bassCharCount > 50) ? 50 : bassCharCount;
+
+			std::string beatStr(beatCharCount, '>');
+			std::string bassStr(bassCharCount, ']');
+
+			printf("%s\n%s\n", beatStr.c_str(), bassStr.c_str());
+
+			readyToUpdate = false;
+		}
+
+		while (audio.getPlayingOffset() >= nextContinue)
+		{
+			nextContinue += continueInterval;
+
+			// Advance to the next window of audio data.
+			fada_continue(fada, FADA_NEXT_WINDOW);
+
+			readyToUpdate = true;
+		}
+
+		sf::sleep(sf::milliseconds(1));
+	}
+
+	// Finished with the manager.
+	fada_closemanager(fada);
+
+	return 0;
+
+}
+\endcode
+
+The output keeps us up to date on beat and bass intensity:
+
+\image html "beatbass.png"
+
+However, there's a bit of a problem with loading the entire audio file at once. Though it may be fine with small audio files, large audio files loaded entirely at one time can consume a lot of memory and have a severe impact on loading times.
+
+In the next example, we will modify this code by implementing audio streaming, which will keep the memory footprint small, and significantly boost loading times.
+
+\section Beat_Bass_2 Part 2 - Audio Streaming
+
+In this modification of the previous code, we create a class that streams audio samples to the manager as audio is loaded by SFML.
+
+\code
+/***********************************************************
+ ** libfada Beat and Bass Visualizer
+ **   Written by Nathan Cousins - December 2013
+ ** 
+ ** Usage: beatbass <audio_filepath>
+ **   `audio_filepath' may be any filetype supported by SFML/libsndfile.
+ ***********************************************************/
+
+#include <SFML/Audio.hpp>
+#include <fada/fada.hpp>
+
+#include <iostream>
+
+
+// Protect data between the main thread and the thread that streams audio.
+sf::Mutex mutex;
+
+
+// Extends the sf::Music class which streams and plays audio on a separate thread.
+// AudioFileStream will push sample data into the libfada manager as the audio data is streamed.
+class AudioFileStream : public sf::Music
+{
+private:
+
+	fada_Manager* m_fada;
+
+
+public:
+	
+	AudioFileStream(fada_Manager* fada)
+	{
+		m_fada = fada;
+	}
+
+
+protected:
+
+	// Called when seeking audio.
+	virtual void onSeek(sf::Time timeOffset)
+	{
+		sf::Lock lock(mutex);
+
+		sf::Music::onSeek(timeOffset);
+
+		// Clear all audio data, since we're going to recieve new audio elsewhere in the audio file.
+		fada_freechunks(m_fada);
+	}
+
+	// Called when SFML loads a new chunk of audio data.
+	virtual bool onGetData(sf::SoundStream::Chunk& chunk)
+	{
+		if (sf::Music::onGetData(chunk))
+		{
+			sf::Lock lock(mutex);
+
+			// Push samples to the manager.
+			// Copy the data, because SFML doesn't hang on to the chunk data.
+			if (fada_pushsamples(m_fada, (void*)chunk.samples, chunk.sampleCount, FADA_TRUE) != FADA_ERROR_SUCCESS)
+			{
+				std::cerr << "Could not push " << chunk.sampleCount << " samples!" << std::endl;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+};
+
+
+//////////////////////////////////////////////////
+int main(int argc, char* args[])
+{
+
+	// Create the libfada manager.
+	// The libfada manager is responsible for analysing the sample data given to it.
+	fada_Manager* fada = fada_newmanager();
+
+
+	std::string filename = "";
+	if (argc > 1)
+		filename = args[1];
+
+
+	AudioFileStream audio(fada);
+
+	// Open the file for streaming.
+	// In SFML, audio data isn't streamed until it is told to play audio.
+	if (!audio.openFromFile(filename))
+	{
+		std::cerr << "Problem opening audio file." << std::endl;
+		return 1;
+	}
+
+
+	// Tell the manager what kind of audio data it's going to recieve.
+	// SFML uses Int16 for audio.
+	fada_bindstream(fada, FADA_TSAMPLE_INT16, audio.getSampleRate(), audio.getChannelCount());
+
+	// Commented, because the default window size is already 1024.
+	// If we wanted to change the size of the analysis window, we could do it here.
+//	fada_setwindowframes(fada, 1024);
+
+
+	// Update every 1024 samples.
+	sf::Time continueInterval = sf::seconds(1024.f / audio.getSampleRate());
+	sf::Time nextContinue = continueInterval;
+
+	bool readyToUpdate = true;
+
+
+	// Starts the audio streaming and plays it.
+	audio.play();
+
+	while (audio.getStatus() == AudioFileStream::Playing)
+	{
+		sf::Lock lock(mutex);
+
+		if (readyToUpdate)
+		{
+			fada_Res beat, bass, normal;
+
+			// libfada's analyzation algorithms use raw sample data in their calculations. This means that the results
+			//   can vary among different sample data types. The normalizer is used to normalize results so they are
+			//   uniform across different sample data types.
+			normal = fada_getnormalizer(fada);
+
+			// Calculate 'beat' and 'bass'
+			fada_calcbeat(fada, &beat);
+			fada_calcbass(fada, &bass);
+
+			// Normalize the values.
+			beat /= normal;
+			bass /= normal;
+
+			// Visualize beat/bass.
+			unsigned int beatCharCount = static_cast<unsigned int>(beat * 500);
+			unsigned int bassCharCount = static_cast<unsigned int>(bass * 75);
+			beatCharCount = (beatCharCount > 50) ? 50 : beatCharCount;
+			bassCharCount = (bassCharCount > 50) ? 50 : bassCharCount;
+
+			std::string beatStr(beatCharCount, '>');
+			std::string bassStr(bassCharCount, ']');
+
+			printf("%s\n%s\n", beatStr.c_str(), bassStr.c_str());
+
+			readyToUpdate = false;
+		}
+
+		while (audio.getPlayingOffset() >= nextContinue)
+		{
+			nextContinue += continueInterval;
+
+			// Advance to the next window of audio data.
+			fada_continue(fada, FADA_NEXT_WINDOW);
+
+			readyToUpdate = true;
+		}
+
+		sf::sleep(sf::milliseconds(1));
+	}
+
+	// Finished with the manager.
+	fada_closemanager(fada);
+
+	return 0;
+
+}
+\endcode
+
+The output here is still very much the same, but the loading times are drastically improved, and very little memory is used in comparison to the first example.
+*/

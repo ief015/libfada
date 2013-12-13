@@ -1,0 +1,330 @@
+/**
+\page Fundamental_Frequency II: Fundamental Frequency
+\brief Generate an FFT and scan for the fundamental frequency.
+
+In these examples, I'll be using SFML (<a href="http://www.sfml-dev.org/">www.sfml-dev.org</a>) for audio loading and playing, which should help keep these examples simple.
+
+\section Fundamental_Frequncy_1 Part 1 - Introduction to FFT Generation
+
+The fundamental frequency finder here will generate an FFT in real-time, and scan the resulting data for the frequency most strongest.
+
+\code
+/***********************************************************
+ ** libfada Fundamental Frequency Finder
+ **   Written by Nathan Cousins - December 2013
+ ** 
+ ** Usage: fundfreq <audio_filepath>
+ **   `audio_filepath' may be any filetype supported by SFML/libsndfile.
+ ***********************************************************/
+
+#include <SFML/Audio.hpp>
+#include <fada/fada.hpp>
+
+#include <iostream>
+
+
+// Protect data between the main thread and the thread that streams audio.
+sf::Mutex mutex;
+
+// Function that scans the FFT data for the fundamental frequency.
+double findFundamentalFreq(fada_Manager*);
+
+
+// Extends the sf::Music class which streams and plays audio on a separate thread.
+// AudioFileStream will push sample data into the libfada manager as the audio data is streamed.
+class AudioFileStream : public sf::Music
+{
+private:
+
+	fada_Manager* m_fada;
+
+
+public:
+	
+	AudioFileStream(fada_Manager* fada)
+	{
+		m_fada = fada;
+	}
+
+
+protected:
+
+	// Called when seeking audio.
+	virtual void onSeek(sf::Time timeOffset)
+	{
+		sf::Lock lock(mutex);
+
+		sf::Music::onSeek(timeOffset);
+
+		// Clear all audio data, since we're going to recieve new audio elsewhere in the audio file.
+		fada_freechunks(m_fada);
+	}
+
+	// Called when SFML loads a new chunk of audio data.
+	virtual bool onGetData(sf::SoundStream::Chunk& chunk)
+	{
+		if (sf::Music::onGetData(chunk))
+		{
+			sf::Lock lock(mutex);
+
+			// Push samples to the manager.
+			// Copy the data, because SFML doesn't hang on to the chunk data.
+			if (fada_pushsamples(m_fada, (void*)chunk.samples, chunk.sampleCount, FADA_TRUE) != FADA_ERROR_SUCCESS)
+			{
+				std::cerr << "Could not push " << chunk.sampleCount << " samples!" << std::endl;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+};
+
+
+//////////////////////////////////////////////////
+int main(int argc, char* args[])
+{
+
+	fada_Manager* fada = fada_newmanager();
+
+
+	std::string filename = "";
+	if (argc > 1)
+		filename = args[1];
+
+
+	AudioFileStream audio(fada);
+
+	if (!audio.openFromFile(filename))
+	{
+		std::cerr << "Problem opening audio file." << std::endl;
+		return 1;
+	}
+
+
+	// Tell the manager what kind of audio data it's going to recieve.
+	// SFML uses Int16 for audio.
+	fada_bindstream(fada, FADA_TSAMPLE_INT16, audio.getSampleRate(), audio.getChannelCount());
+
+	// Commented, because the default window size is already 1024.
+	// If we wanted to change the size of the analysis window, we could do it here.
+//	fada_setwindowframes(fada, 1024);
+
+	// Preload the internal FFT buffer. That's where generated FFT data is stored.
+	// If we wanted more than one FFT buffer or to specify how large the FFT buffer is, that's where external FFT buffers (fada_FFTBuffer type) come in handy.
+	fada_preloadfftbuffer(fada);
+
+
+	// Update every 1024 samples.
+	sf::Time continueInterval = sf::seconds(1024.f / audio.getSampleRate());
+	sf::Time nextContinue = continueInterval;
+
+	bool readyToUpdate = true;
+
+
+	audio.play();
+
+	while (audio.getStatus() == AudioFileStream::Playing)
+	{
+		sf::Lock lock(mutex);
+
+		if (readyToUpdate)
+		{
+			// Generate the FFT.
+			// See findFundamentalFreq() to see how we extract the FFT data.
+			fada_calcfft(fada);
+
+			std::cout << "Fundamental Frequency: " << findFundamentalFreq(fada) << "Hz" << std::endl;
+
+			readyToUpdate = false;
+		}
+
+		while (audio.getPlayingOffset() >= nextContinue)
+		{
+			nextContinue += continueInterval;
+
+			// Advance to the next window of audio data.
+			fada_continue(fada, FADA_NEXT_WINDOW);
+
+			readyToUpdate = true;
+		}
+		
+		sf::sleep(sf::milliseconds(1));
+	}
+
+	// Finished with the manager.
+	fada_closemanager(fada);
+
+	return 0;
+
+}
+
+
+//////////////////////////////////////////////////
+double findFundamentalFreq(fada_Manager* fada)
+{
+
+	double high = 0.;
+	size_t fundamental = 0;
+
+	// Find index with highest value.
+	for (size_t i = 0, sz = (fada_getfftsize(fada) / 2); i < sz; ++i)
+	{
+		double cur;
+		fada_getfftvalue(fada, i, &cur);
+
+		if (cur > high)
+		{
+			high = cur;
+			fundamental = i;
+		}
+	}
+
+	return fundamental * (static_cast<double>(fada_getsamplerate(fada)) / (fada_getfftsize(fada) / 2));
+
+}
+\endcode
+
+The output, as the music plays, keeps us up to date on the fundamental frequency:
+
+\image html "fundamental.png"
+
+Cool, it works nicely! However, there's a noticable problem - there's a lot of repeating values.
+This is due to the fada_Manager's internal FFT buffer's limited size, which is automatically determined by the manager's analysis window size. In the next example, we ditch the idea of the manager housing the FFT buffer internally, and we create our own larger external FFT buffer.
+
+\section Fundamental_Frequncy_2 Part 2 - External FFT Buffers
+
+In this modification, we create our own external FFT buffer, and assign it to the manager.
+
+\code
+// ...
+
+//////////////////////////////////////////////////
+int main(int argc, char* args[])
+{
+
+	fada_Manager* fada = fada_newmanager();
+	fada_FFTBuffer* fft;
+
+
+	std::string filename = "";
+	if (argc > 1)
+		filename = args[1];
+
+
+	AudioFileStream audio(fada);
+
+	if (!audio.openFromFile(filename))
+	{
+		std::cerr << "Problem opening audio file." << std::endl;
+		return 1;
+	}
+
+
+	// Tell the manager what kind of audio data it's going to recieve.
+	// SFML uses Int16 for audio.
+	fada_bindstream(fada, FADA_TSAMPLE_INT16, audio.getSampleRate(), audio.getChannelCount());
+
+	// Commented, because the default window size is already 1024.
+	// If we wanted to change the size of the analysis window, we could do it here.
+//	fada_setwindowframes(fada, 1024);
+
+	// Create the FFT buffer.
+	// Size should be a power of two.
+	fft = fada_newfftbuffer(8192);
+
+	// Assign our FFT buffer to the manager.
+	fada_usefftbuffer(fada, fft);
+
+
+	// Update every 1024 samples.
+	sf::Time continueInterval = sf::seconds(1024.f / audio.getSampleRate());
+	sf::Time nextContinue = continueInterval;
+
+	bool readyToUpdate = true;
+
+
+	audio.play();
+
+	while (audio.getStatus() == AudioFileStream::Playing)
+	{
+		sf::Lock lock(mutex);
+
+		if (readyToUpdate)
+		{
+			// Generate the FFT.
+			// See findFundamentalFreq() to see how we extract the FFT data.
+			fada_calcfft(fada);
+
+			std::cout << "Fundamental Frequency: " << findFundamentalFreq(fada) << "Hz" << std::endl;
+
+			readyToUpdate = false;
+		}
+
+		while (audio.getPlayingOffset() >= nextContinue)
+		{
+			nextContinue += continueInterval;
+
+			// Advance to the next window of audio data.
+			fada_continue(fada, FADA_NEXT_WINDOW);
+
+			readyToUpdate = true;
+		}
+		
+		sf::sleep(sf::milliseconds(1));
+	}
+
+	// Finished with the FFT buffer.
+	fada_closefftbuffer(fft);
+
+	// Unassign the FFT buffer.
+	// Not terribly useful here, but if the application were still running, it
+	//   would be useful to tell the manager that we're not using that FFT buffer
+	//   anymore, so it wouldn't attempt to access a buffer that no longer exists.
+	fada_usefftbuffer(fada, NULL);
+
+	// Finished with the manager.
+	fada_closemanager(fada);
+
+	return 0;
+
+}
+
+
+//////////////////////////////////////////////////
+double findFundamentalFreq(fada_Manager* fada)
+{
+
+	double high = 0.;
+	size_t fundamental = 0;
+
+	// Find index with highest value.
+	for (size_t i = 0, sz = (fada_getfftsize(fada) / 2); i < sz; ++i)
+	{
+		double cur;
+		fada_getfftvalue(fada, i, &cur);
+
+		if (cur > high)
+		{
+			high = cur;
+			fundamental = i;
+		}
+	}
+
+	// Determining the fundamental frequency becomes more accurate the larger the FFT buffer is.
+	// However, of course, as we increase the FFT size, the longer it takes to generate the FFT.
+	return fundamental * (static_cast<double>(fada_getsamplerate(fada)) / (fada_getfftsize(fada) / 2));
+
+}
+\endcode
+
+The output:
+
+\image html "fundamental2.png"
+
+That looks a bit nicer, not as many repeating frequencies now.
+
+With external FFT buffers, you're able to specify how large they are independent of the manager's analysis window size. You're also able create multiple FFT buffers so you are not limited to the single internal buffer.
+*/
