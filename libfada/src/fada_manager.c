@@ -32,7 +32,7 @@
 
 
 //////////////////////////////////////////////////
-fada_Manager* fada_newmanager()
+FADA_API fada_Manager* fada_newmanager()
 {
 	fada_Manager* m;
 	m = (fada_Manager*)fada_memalloc(sizeof(fada_Manager));
@@ -65,7 +65,7 @@ fada_Manager* fada_newmanager()
 
 
 //////////////////////////////////////////////////
-void fada_closemanager(fada_Manager* m)
+FADA_API void fada_closemanager(fada_Manager* m)
 {
 	fada_freechunks(m);
 
@@ -80,7 +80,7 @@ void fada_closemanager(fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_bindsamples(fada_Manager* m, void* data, fada_Pos sample_count, fada_Boolean copy_data, fada_TSample sample_type, unsigned int sample_rate, unsigned int channels)
+FADA_API fada_Error fada_bindsamples(fada_Manager* m, void* data, fada_Pos sample_count, fada_Boolean copy_data, fada_TSample sample_type, unsigned int sample_rate, unsigned int channels)
 {
 	fada_Error err;
 
@@ -114,7 +114,7 @@ fada_Error fada_bindsamples(fada_Manager* m, void* data, fada_Pos sample_count, 
 
 
 //////////////////////////////////////////////////
-fada_Error fada_bindstream(fada_Manager* m, fada_TSample sample_type, unsigned int sample_rate, unsigned int channels)
+FADA_API fada_Error fada_bindstream(fada_Manager* m, fada_TSample sample_type, unsigned int sample_rate, unsigned int channels)
 {
 	fada_Error err;
 
@@ -144,7 +144,7 @@ fada_Error fada_bindstream(fada_Manager* m, fada_TSample sample_type, unsigned i
 
 
 //////////////////////////////////////////////////
-fada_Error fada_pushsamples(fada_Manager* m, void* data, fada_Pos sample_count, fada_Boolean copy_data)
+FADA_API fada_Error fada_pushsamples(fada_Manager* m, void* data, fada_Pos sample_count, fada_Boolean copy_data)
 {
 	fada_Chunk* newchunk;
 
@@ -219,7 +219,7 @@ fada_Error fada_pushsamples(fada_Manager* m, void* data, fada_Pos sample_count, 
 
 
 //////////////////////////////////////////////////
-void fada_trimchunks(fada_Manager* m)
+FADA_API void fada_trimchunks(fada_Manager* m)
 {
 	fada_Chunk* cur, *next;
 	fada_Pos freed = 0;
@@ -251,7 +251,7 @@ void fada_trimchunks(fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-void fada_freechunks(fada_Manager* m)
+FADA_API void fada_freechunks(fada_Manager* m)
 {
 	fada_Chunk* cur, *next;
 
@@ -275,21 +275,21 @@ void fada_freechunks(fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_TSample fata_getsampletype(const fada_Manager* m)
+FADA_API fada_TSample fata_getsampletype(const fada_Manager* m)
 {
 	return m->sample_type;
 }
 
 
 //////////////////////////////////////////////////
-unsigned int fada_getsamplerate(const fada_Manager* m)
+FADA_API unsigned int fada_getsamplerate(const fada_Manager* m)
 {
 	return m->sample_rate;
 }
 
 
 //////////////////////////////////////////////////
-unsigned int fada_getsamplecount(const fada_Manager* m)
+FADA_API unsigned int fada_getsamplecount(const fada_Manager* m)
 {
 	if (!m->ready)
 		return 0;
@@ -298,7 +298,7 @@ unsigned int fada_getsamplecount(const fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-unsigned int fada_getframecount(const fada_Manager* m)
+FADA_API unsigned int fada_getframecount(const fada_Manager* m)
 {
 	if (!m->ready)
 		return 0;
@@ -307,35 +307,35 @@ unsigned int fada_getframecount(const fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-unsigned int fada_getchannels(const fada_Manager* m)
+FADA_API unsigned int fada_getchannels(const fada_Manager* m)
 {
 	return m->channels;
 }
 
 
 //////////////////////////////////////////////////
-fada_Pos fada_getposition(const fada_Manager* m)
+FADA_API fada_Pos fada_getposition(const fada_Manager* m)
 {
 	return (m->current_chunk->position + m->current_sample) / m->channels;
 }
 
 
 //////////////////////////////////////////////////
-fada_Pos fada_getwindowsize(const fada_Manager* m)
+FADA_API fada_Pos fada_getwindowsize(const fada_Manager* m)
 {
 	return m->window.size;
 }
 
 
 //////////////////////////////////////////////////
-fada_Pos fada_getwindowframes(const fada_Manager* m)
+FADA_API fada_Pos fada_getwindowframes(const fada_Manager* m)
 {
 	return m->window.size / m->channels;
 }
 
 
 //////////////////////////////////////////////////
-fada_Error fada_setposition(fada_Manager* m, fada_Pos pos)
+FADA_API fada_Error fada_setposition(fada_Manager* m, fada_Pos pos)
 {
 	fada_Chunk* chunk;
 
@@ -364,7 +364,7 @@ fada_Error fada_setposition(fada_Manager* m, fada_Pos pos)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_setwindowframes(fada_Manager* m, fada_Pos frames)
+FADA_API fada_Error fada_setwindowframes(fada_Manager* m, fada_Pos frames)
 {
 	int so;
 	void* buf;
@@ -402,7 +402,7 @@ fada_Error fada_setwindowframes(fada_Manager* m, fada_Pos frames)
 
 
 //////////////////////////////////////////////////
-fada_Boolean fada_continue(fada_Manager* m, long offset_frames)
+FADA_API fada_Boolean fada_continue(fada_Manager* m, long offset_frames)
 {
 	fada_Chunk* chunk;
 	
@@ -444,7 +444,7 @@ fada_Boolean fada_continue(fada_Manager* m, long offset_frames)
 
 
 //////////////////////////////////////////////////
-fada_Boolean fada_continuetolast(fada_Manager* m)
+FADA_API fada_Boolean fada_continuetolast(fada_Manager* m)
 {
 	fada_Chunk* chunk;
 	int n;
@@ -489,7 +489,7 @@ fada_Boolean fada_continuetolast(fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Boolean fada_endofaudio(const fada_Manager* m)
+FADA_API fada_Boolean fada_endofaudio(const fada_Manager* m)
 {
 	if (!m->current_chunk)
 		return FADA_TRUE;
@@ -498,7 +498,7 @@ fada_Boolean fada_endofaudio(const fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Res fada_getnormalizer(const fada_Manager* m)
+FADA_API fada_Res fada_getnormalizer(const fada_Manager* m)
 {
 	if (!m->ready) return 1.;
 
@@ -517,7 +517,7 @@ fada_Res fada_getnormalizer(const fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_preloadfftbuffer(fada_Manager* m)
+FADA_API fada_Error fada_preloadfftbuffer(fada_Manager* m)
 {
 	if (!m->ready) return FADA_ERROR_MANAGER_NOT_READY;
 
@@ -536,7 +536,7 @@ fada_Error fada_preloadfftbuffer(fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_usefftbuffer(fada_Manager* m, fada_FFTBuffer* b)
+FADA_API fada_Error fada_usefftbuffer(fada_Manager* m, fada_FFTBuffer* b)
 {
 	if (!m->ready) return FADA_ERROR_MANAGER_NOT_READY;
 
@@ -552,7 +552,7 @@ fada_Error fada_usefftbuffer(fada_Manager* m, fada_FFTBuffer* b)
 
 
 //////////////////////////////////////////////////
-const fada_Res* fada_getfft(const fada_Manager* m)
+FADA_API const fada_Res* fada_getfft(const fada_Manager* m)
 {
 	if (!m->fft.buffer)
 		return NULL;
@@ -561,7 +561,7 @@ const fada_Res* fada_getfft(const fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Pos fada_getfftsize(const fada_Manager* m)
+FADA_API fada_Pos fada_getfftsize(const fada_Manager* m)
 {
 	if (!m->fft.buffer)
 		return 0;
@@ -570,7 +570,7 @@ fada_Pos fada_getfftsize(const fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvalue(const fada_Manager* m, fada_Pos pos, fada_Res* out_result)
+FADA_API fada_Error fada_getfftvalue(const fada_Manager* m, fada_Pos pos, fada_Res* out_result)
 {
 	if (!m->ready) return FADA_ERROR_MANAGER_NOT_READY;
 	return fada_getfftvalue_buffer(m->fft.buffer, pos, out_result);
@@ -578,7 +578,7 @@ fada_Error fada_getfftvalue(const fada_Manager* m, fada_Pos pos, fada_Res* out_r
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvalues(const fada_Manager* m, fada_Res* out_results)
+FADA_API fada_Error fada_getfftvalues(const fada_Manager* m, fada_Res* out_results)
 {
 	if (!m->ready) return FADA_ERROR_MANAGER_NOT_READY;
 	return fada_getfftvalues_buffer(m->fft.buffer, out_results);
@@ -586,7 +586,7 @@ fada_Error fada_getfftvalues(const fada_Manager* m, fada_Res* out_results)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvaluesrange(const fada_Manager* m, fada_Res* out_results, fada_Pos offset, fada_Pos len)
+FADA_API fada_Error fada_getfftvaluesrange(const fada_Manager* m, fada_Res* out_results, fada_Pos offset, fada_Pos len)
 {
 	if (!m->ready) return FADA_ERROR_MANAGER_NOT_READY;
 	return fada_getfftvaluesrange_buffer(m->fft.buffer, out_results, offset, len);
@@ -594,7 +594,7 @@ fada_Error fada_getfftvaluesrange(const fada_Manager* m, fada_Res* out_results, 
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvaluefromfrequency(const fada_Manager* m, fada_Res freq, fada_Res* out_result)
+FADA_API fada_Error fada_getfftvaluefromfrequency(const fada_Manager* m, fada_Res freq, fada_Res* out_result)
 {
 	if (!m->ready) return FADA_ERROR_MANAGER_NOT_READY;
 	if (freq >= m->sample_rate / 2) return FADA_ERROR_FREQUENCY_OUT_OF_BOUNDS;

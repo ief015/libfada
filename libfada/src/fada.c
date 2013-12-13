@@ -29,7 +29,7 @@
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getsample(fada_Manager* m, fada_Pos pos, unsigned int channel, fada_Res* out_result)
+FADA_API fada_Error fada_getsample(fada_Manager* m, fada_Pos pos, unsigned int channel, fada_Res* out_result)
 {
 	if (!out_result)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -64,7 +64,7 @@ fada_Error fada_getsample(fada_Manager* m, fada_Pos pos, unsigned int channel, f
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getsamples(fada_Manager* m, unsigned int channel, fada_Res* out_results)
+FADA_API fada_Error fada_getsamples(fada_Manager* m, unsigned int channel, fada_Res* out_results)
 {
 	if (!out_results)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -97,7 +97,7 @@ fada_Error fada_getsamples(fada_Manager* m, unsigned int channel, fada_Res* out_
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getframe(fada_Manager* m, fada_Pos pos, fada_Res* out_result)
+FADA_API fada_Error fada_getframe(fada_Manager* m, fada_Pos pos, fada_Res* out_result)
 {
 	if (!out_result)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -129,7 +129,7 @@ fada_Error fada_getframe(fada_Manager* m, fada_Pos pos, fada_Res* out_result)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getframes(fada_Manager* m, fada_Res* out_results)
+FADA_API fada_Error fada_getframes(fada_Manager* m, fada_Res* out_results)
 {
 	if (!out_results)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -159,7 +159,7 @@ fada_Error fada_getframes(fada_Manager* m, fada_Res* out_results)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_calcbeat(fada_Manager* m, fada_Res* out_result)
+FADA_API fada_Error fada_calcbeat(fada_Manager* m, fada_Res* out_result)
 {
 	if (!out_result)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -189,7 +189,7 @@ fada_Error fada_calcbeat(fada_Manager* m, fada_Res* out_result)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_calcbeat_channel(fada_Manager* m, unsigned int channel, fada_Res* out_result)
+FADA_API fada_Error fada_calcbeat_channel(fada_Manager* m, unsigned int channel, fada_Res* out_result)
 {
 	if (!out_result)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -222,7 +222,7 @@ fada_Error fada_calcbeat_channel(fada_Manager* m, unsigned int channel, fada_Res
 
 
 //////////////////////////////////////////////////
-fada_Error fada_calcbass(fada_Manager* m, fada_Res* out_result)
+FADA_API fada_Error fada_calcbass(fada_Manager* m, fada_Res* out_result)
 {
 	if (!out_result)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -252,7 +252,7 @@ fada_Error fada_calcbass(fada_Manager* m, fada_Res* out_result)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_calcbass_channel(fada_Manager* m, unsigned int channel, fada_Res* out_result)
+FADA_API fada_Error fada_calcbass_channel(fada_Manager* m, unsigned int channel, fada_Res* out_result)
 {
 	if (!out_result)
 		return FADA_ERROR_INVALID_PARAMETER;
@@ -285,7 +285,7 @@ fada_Error fada_calcbass_channel(fada_Manager* m, unsigned int channel, fada_Res
 
 
 //////////////////////////////////////////////////
-fada_Error fada_calcfft(fada_Manager* m)
+FADA_API fada_Error fada_calcfft(fada_Manager* m)
 {
 	fada_Error err = fada_preloadfftbuffer(m);
 	if (err != FADA_ERROR_SUCCESS)
@@ -313,7 +313,7 @@ fada_Error fada_calcfft(fada_Manager* m)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_calcfft_channel(fada_Manager* m, unsigned int channel)
+FADA_API fada_Error fada_calcfft_channel(fada_Manager* m, unsigned int channel)
 {
 	fada_Error err;
 

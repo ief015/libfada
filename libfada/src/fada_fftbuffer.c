@@ -32,7 +32,7 @@
 
 
 //////////////////////////////////////////////////
-fada_FFTBuffer* fada_newfftbuffer(fada_Pos size_po2)
+FADA_API fada_FFTBuffer* fada_newfftbuffer(fada_Pos size_po2)
 {
 	fada_FFTBuffer* buf;
 	fada_Pos nearest = size_po2;
@@ -73,7 +73,7 @@ fada_FFTBuffer* fada_newfftbuffer(fada_Pos size_po2)
 
 
 //////////////////////////////////////////////////
-void fada_closefftbuffer(fada_FFTBuffer* b)
+FADA_API void fada_closefftbuffer(fada_FFTBuffer* b)
 {
 	if (b->buffer)
 		fada_memfree(b->buffer);
@@ -83,7 +83,7 @@ void fada_closefftbuffer(fada_FFTBuffer* b)
 
 
 //////////////////////////////////////////////////
-const fada_Res* fada_getfft_buffer(const fada_FFTBuffer* b)
+FADA_API const fada_Res* fada_getfft_buffer(const fada_FFTBuffer* b)
 {
 	if (!b)
 		return NULL;
@@ -93,7 +93,7 @@ const fada_Res* fada_getfft_buffer(const fada_FFTBuffer* b)
 
 
 //////////////////////////////////////////////////
-fada_Pos fada_getfftsize_buffer(const fada_FFTBuffer* b)
+FADA_API fada_Pos fada_getfftsize_buffer(const fada_FFTBuffer* b)
 {
 	if (!b)
 		return 0;
@@ -103,7 +103,7 @@ fada_Pos fada_getfftsize_buffer(const fada_FFTBuffer* b)
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvalue_buffer(const fada_FFTBuffer* b, fada_Pos pos, fada_Res* out_result)
+FADA_API fada_Error fada_getfftvalue_buffer(const fada_FFTBuffer* b, fada_Pos pos, fada_Res* out_result)
 {
 	if (!out_result) return FADA_ERROR_INVALID_PARAMETER;
 	if (!b) return FADA_ERROR_INVALID_FFT_BUFFER;
@@ -116,7 +116,7 @@ fada_Error fada_getfftvalue_buffer(const fada_FFTBuffer* b, fada_Pos pos, fada_R
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvalues_buffer(const fada_FFTBuffer* b, fada_Res* out_results)
+FADA_API fada_Error fada_getfftvalues_buffer(const fada_FFTBuffer* b, fada_Res* out_results)
 {
 	unsigned int i;
 
@@ -133,7 +133,7 @@ fada_Error fada_getfftvalues_buffer(const fada_FFTBuffer* b, fada_Res* out_resul
 
 
 //////////////////////////////////////////////////
-fada_Error fada_getfftvaluesrange_buffer(const fada_FFTBuffer* b, fada_Res* out_results, fada_Pos offset, fada_Pos len)
+FADA_API fada_Error fada_getfftvaluesrange_buffer(const fada_FFTBuffer* b, fada_Res* out_results, fada_Pos offset, fada_Pos len)
 {
 	unsigned int i;
 
