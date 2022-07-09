@@ -275,7 +275,7 @@ FADA_API fada_Error fada_setwindowframes(fada_Manager* m, fada_Pos frames);
 FADA_API fada_Boolean fada_continue(fada_Manager* m, long offset_frames);
 
 //////////////////////////////////////////////////
-/// \brief Advance the analysis window to the last available window of audio samples bound to the manager.
+/// \brief Advance the analysis window to the last full available window of audio samples bound to the manager.
 /// 
 /// \param m The manager to advance.
 /// 
