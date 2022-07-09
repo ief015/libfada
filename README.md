@@ -11,4 +11,6 @@ Provides the tools to analyze audio (streamed or otherwise) in real-time, such a
 
 and more!
 
-For more information, documentation, and downloads, go to: https://dl.dropboxusercontent.com/u/39090770/libfada/index.htm
+~~For more information, documentation, and downloads, go to: http://goo.gl/XgRS5O~~
+
+Documentation can now be [found here.](https://htmlpreview.github.io/?https://github.com/ief015/libfada/blob/master/docs/index.htm)
